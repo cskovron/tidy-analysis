@@ -16,6 +16,9 @@ output:
     fig_height: 4
 ---
 
+```{r setup, include=FALSE}
+library(knitr)
+```
 
 
 ## Tidying up the analysis stage
@@ -24,33 +27,24 @@ See these slides and the Rmd on github:
 http://github.com/cskovron/tidy-analysis
 
 
+## Tidy data principles 
+
+![](./figures/tidy-data.png)
+
+## The modeling stage 
+
 ![](./figures/data-science-model.png)
-
-## Check for some installations
-
-```{r, eval=FALSE}
-install.packages(c("tidyverse", "corrr","infer","dotwhisker"))
-```
-
-## Load packages we will need 
-
-```{r, message=FALSE}
-library(tidyverse)
-library(corrr)
-library(infer)
-library(dotwhisker)
-```
 
 
 ## The problem: a lack of convention in analysis and modeling packages 
 
 - Lack of conventions for how models are specified in calls to modeling functions
-- Lack of conventions 
+- Lack of conventions for what output looks like and how we work with it 
 
 
 ## Fortunately, an emerging set of conventions on tidy principles
 
-- e.g., [`parsnip`](https://topepo.github.io/parsnip/), a tool to unify model specification across packages
+- this will be housed under [tidymodels](https://www.tidyverse.org/articles/2018/08/tidymodels-0-0-1/)
 - [A draft set of tidy conventions for modeling packages](https://tidymodels.github.io/model-implementation-principles/index.html)
 - But this is still largely under development
 
@@ -65,11 +59,33 @@ library(dotwhisker)
 
 - `recipes` simplifies getting design matrices
 - `tidybayes` and `tidyposterior` 
+- e.g., [`parsnip`](https://topepo.github.io/parsnip/), a tool to unify model specification across packages
+
+
+
+## Today, some examples with `corrr`, `infer`, and `broom`
+
+## Check for some installations
+
+```{r, eval=FALSE}
+install.packages(c("tidyverse", "corrr","infer","dotwhisker"))
+```
+
+## Load packages we will need 
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(corrr)
+library(infer)
+library(dotwhisker)
+```
+
+
 
 
 ## Tidy correlations with `corrr`
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 #install.package('corrr')
 library(corrr)
 d <- correlate(mtcars)
@@ -89,24 +105,25 @@ d %>% filter(cyl > .7)
 
 ## `corrr` makes exploring correlations easy + tidy 
 ```{r}
-
+# Select the mpg, cyl and disp columns (and rowname)
+d %>% select(rowname, mpg, cyl, disp)
 ```
  
 
 ## Lots of operations you can do on a `cor_df`
 
 - Internal changes (cor_df out)
-  - shave() the upper or lower triangle (set to NA).
-  - rearrange() the columns and rows based on correlation strengths.
+    - shave() the upper or lower triangle (set to NA).
+    - rearrange() the columns and rows based on correlation strengths.
 
 - Reshape structure (tbl or cor_df out):
-  - focus() on select columns and rows.
-  - stretch() into a long format.
+    - focus() on select columns and rows.
+    - stretch() into a long format.
 
--Output/visualisations (console/plot out):
-  - fashion() the correlations for pretty printing.
-  - rplot() a shape for each correlation.
-  - network_plot() a point for each variable, joined by paths for correlations.
+- Output/visualisations (console/plot out):
+    - fashion() the correlations for pretty printing.
+    - rplot() a shape for each correlation.
+    - network_plot() a point for each variable, joined by paths for correlations.
 
 
 ## Tidy correlation output 
@@ -131,7 +148,11 @@ d %>%
 
 ## Using `infer` for tidy hypothesis testing
 
-[`infer`](https://infer.netlify.com/reference/index.html) provides tidy tools for common hypothesis testing tasks including t-tests, chi-squared tests
+[`infer`](https://infer.netlify.com/reference/index.html) provides tidy tools for common hypothesis testing tasks including t-tests, chi-squared tests, etc. It's really powerful for randomization/permutation inference and bootstrapping. For parametric tests, often ok to use base stats functions and then use `broom`, which we'll review in the next section, to tidy them. 
+
+![](./figures/infer_hex.png){width=250px}
+
+
 
 
 
@@ -150,36 +171,47 @@ mtcars <- as.data.frame(mtcars) %>%
           carb = factor(carb))
 ```
 
-## Difference in proportions: the old way
+## `infer` functions
 
+- `specify()` - specify response and explanatory variables, using formula
+- `hypothesize()` - declare a null hypothesis (typically "independence")
+- `generate()` - generate permuatations/bootstraps 
+- `calculate()` - calculate summary statistics 
 
+## Things we can calculate() include
 
+"mean", "median", "sd", "prop", "diff in means",
+  "diff in medians", "diff in props", "Chisq", "F", "slope", "correlation",
+  "t", "z"
 
-## Difference in proportions with `infer`
-
+## Difference in means: the old way
+ 
 ```{r}
-mtcars %>%
-  specify(am ~ vs, success = "1") %>%
-  hypothesize(null = "independence") %>%
-  generate(reps = 100, type = "permute") %>%
-  calculate(stat = "diff in props", order = c("1", "0"))
+t.out <-  t.test(mpg ~ am, data = mtcars)
+t.out
+```
+
+## Accessing stuff here is a chore
+```{r}
+t.out$statistic
+```
+```{r}
+t.out$p.value
+```
+```{r}
+t.out$estimate
 ```
 
 
-## `infer` functions
-
-`specify()` - 
-`hypothesize()` - 
-`generate()` - 
-`calculate()` - 
-
-
-## Difference in means: the old way
-
-
-
 ## Difference in means with `infer`
+Use the `t_test()` function: 
+```{r}
+mtcars %>%
+  t_test(mpg ~ am, order = c("1", "0"), alternative = "less")
+```
 
+## Or bootstrap it quickly and easily 
+Note the non-formula interface: 
 ```{r}
 mtcars %>%
   specify(response = mpg, explanatory = am) %>%
@@ -194,7 +226,7 @@ mtcars %>%
 
 ## `broom` - tidy up modeling output 
 
-
+![](./figures/broom.png){width=250px}
 
 
 ## `broom` tidies up regression output 
@@ -209,9 +241,9 @@ mtcars %>%
 
 ## Tidying functions
 
-* `tidy`: constructs a data frame that summarizes the model's statistical findings. This includes coefficients and p-values for each term in a regression, per-cluster information in clustering applications, or per-test information for `multtest` functions.
-* `augment`: add columns to the original data that was modeled. This includes predictions, residuals, and cluster assignments.
-* `glance`: construct a concise *one-row* summary of the model. This typically contains values such as R^2, adjusted R^2, and residual standard error that are computed once for the entire model.
+- `tidy`: constructs a data frame that summarizes the model's statistical findings. This includes coefficients and p-values for each term in a regression, per-cluster information in clustering applications, or per-test information for `multtest` functions.
+- `augment`: add columns to the original data that was modeled. This includes predictions, residuals, and cluster assignments.
+- `glance`: construct a concise *one-row* summary of the model. This typically contains values such as R^2, adjusted R^2, and residual standard error that are computed once for the entire model.
 
 
 ## Example 
@@ -268,7 +300,6 @@ glance(glmfit)
 ```
 
 ## Generalized linear and non-linear models
-
 
 These functions also work on other fits, such as nonlinear models (`nls`):
 
@@ -371,20 +402,20 @@ ggplot(bootnls_aug, aes(wt, mpg)) + geom_point() +
 
 ## `broom` and "the secret weapon"
 
-- Gelman's "secret weapon" 
+- [Gelman's "secret weapon"](https://andrewgelman.com/2005/03/07/the_secret_weap/)
 - Fit the same model repeatedly to different datasets 
+- Visualize a single predictor across each group 
 
 ## Use `dotwhisker` and `broom` to use the secret weapon in a tidy way 
 
-```{r, tidy = TRUE}
-#library(broom)
-#library(dplyr)
+## 
 
+```{r, tidy = TRUE}
 # Estimate models across many samples, put results in a tidy data frame
 by_clarity <- diamonds %>% 
   group_by(clarity) %>%
- do(broom::tidy(lm(price ~ carat + cut + color, data = .))) %>%
- ungroup %>% 
+  do(broom::tidy(lm(price ~ carat + cut + color, data = .))) %>%
+  ungroup %>% 
   rename(model = clarity)
 
 # Generate a 'secret weapon' plot of the results of diamond size
