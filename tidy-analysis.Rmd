@@ -4,20 +4,53 @@ title:  |
 author: |
         | Christopher Skovron
         | Northwestern University 
+        | `R` User Group
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
-    revealjs::revealjs_presentation:
-          transition: none
-          fig_height: 4
+  revealjs::revealjs_presentation: 
+    theme: simple
+    highlight: haddock
+    center: false
+    transition: none
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-```
 
 
 ## Tidying up the analysis stage
 
+See these slides and the Rmd on github:
+http://github.com/cskovron/tidy-analysis
+
+
+![](./figures/data-science-model.png)
+
+## Check for some installations
+
+```{r, eval=FALSE}
+install.packages(c("tidyverse", "corrr","infer","dotwhisker"))
+```
+
+## Load packages we will need 
+
+```{r, message=FALSE}
+library(tidyverse)
+library(corrr)
+library(infer)
+library(dotwhisker)
+```
+
+
+## The problem: a lack of convention in analysis and modeling packages 
+
+- Lack of conventions for how models are specified in calls to modeling functions
+- Lack of conventions 
+
+
+## Fortunately, an emerging set of conventions on tidy principles
+
+- e.g., [`parsnip`](https://topepo.github.io/parsnip/), a tool to unify model specification across packages
+- [A draft set of tidy conventions for modeling packages](https://tidymodels.github.io/model-implementation-principles/index.html)
+- But this is still largely under development
 
 
 ## Tools 
@@ -28,8 +61,8 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Additional modeling packages emerging 
 
-
-
+- `recipes` simplifies getting design matrices
+- `tidybayes` and `tidyposterior` 
 
 
 ## Tidy correlations with `corrr`
@@ -46,7 +79,9 @@ d
 
 ## Using `infer` for tidy hypothesis testing
 
-[`infer`](https://infer.netlify.com/reference/index.html) provides 
+[`infer`](https://infer.netlify.com/reference/index.html) provides tidy tools for common hypothesis testing tasks including t-tests, chi-squared tests
+
+
 
 
 
@@ -104,6 +139,8 @@ mtcars %>%
 
 
 
+
+## `broom` - tidy up modeling output 
 
 
 
@@ -193,6 +230,20 @@ ggplot(bootnls_aug, aes(wt, mpg)) + geom_point() +
 
 ## Use `dotwhisker` and `broom` to use the secret weapon in a tidy way 
 
+```{r, tidy = TRUE}
+#library(broom)
+#library(dplyr)
+
+# Estimate models across many samples, put results in a tidy data frame
+by_clarity <- diamonds %>% 
+  group_by(clarity) %>%
+ do(broom::tidy(lm(price ~ carat + cut + color, data = .))) %>%
+ ungroup %>% 
+  rename(model = clarity)
+
+# Generate a 'secret weapon' plot of the results of diamond size
+secret_weapon(by_clarity, "carat")
+```
 
 
 
