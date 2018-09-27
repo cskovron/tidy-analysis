@@ -12,6 +12,8 @@ output:
     highlight: haddock
     center: false
     transition: none
+    fig_width: 5
+    fig_height: 4
 ---
 
 
@@ -75,6 +77,56 @@ d
 ```
 
 
+## `corrr` makes exploring correlations easy + tidy 
+
+```{r}
+# Filter rows to occasions in which cyl has a correlation of .7 or more with
+# another variable.
+d %>% filter(cyl > .7)
+
+```
+
+
+## `corrr` makes exploring correlations easy + tidy 
+```{r}
+
+```
+ 
+
+## Lots of operations you can do on a `cor_df`
+
+- Internal changes (cor_df out)
+  - shave() the upper or lower triangle (set to NA).
+  - rearrange() the columns and rows based on correlation strengths.
+
+- Reshape structure (tbl or cor_df out):
+  - focus() on select columns and rows.
+  - stretch() into a long format.
+
+-Output/visualisations (console/plot out):
+  - fashion() the correlations for pretty printing.
+  - rplot() a shape for each correlation.
+  - network_plot() a point for each variable, joined by paths for correlations.
+
+
+## Tidy correlation output 
+
+```{r}
+d %>%
+  focus(mpg:drat, mirror = TRUE) %>%  # Focus only on mpg:drat
+  shave() %>% # Remove the upper triangle
+  fashion()   # Print in nice format 
+```
+
+## Visualize correlations 
+```{r}
+d %>%
+  focus(mpg:drat, mirror = TRUE) %>%
+  rearrange(absolute = FALSE) %>% 
+  shave() %>%
+  rplot()
+```
+
 
 
 ## Using `infer` for tidy hypothesis testing
@@ -85,7 +137,7 @@ d
 
 
 
-
+## Set up mtcars for example 
 
 Set up mtcars for the example analysis - mutate vars to factors
 
@@ -145,23 +197,117 @@ mtcars %>%
 
 
 
-
-## Tidy bootstrapping with `broom`
-
-
-
-## Bootstrapping the old way
-
-
-## Bootstrapping with `broom`
-
-
 ## `broom` tidies up regression output 
 
 - output from `lm`, `glm`, `t.test` is ugly and not standardized
 - `broom` transforms into easy-to-use matrices
 - makes manipulating model output much easier
 - especially useful if you're simulating a lot of models 
+
+
+
+
+## Tidying functions
+
+* `tidy`: constructs a data frame that summarizes the model's statistical findings. This includes coefficients and p-values for each term in a regression, per-cluster information in clustering applications, or per-test information for `multtest` functions.
+* `augment`: add columns to the original data that was modeled. This includes predictions, residuals, and cluster assignments.
+* `glance`: construct a concise *one-row* summary of the model. This typically contains values such as R^2, adjusted R^2, and residual standard error that are computed once for the entire model.
+
+
+## Example 
+
+```{r lmfit}
+lmfit <- lm(mpg ~ wt, mtcars)
+lmfit
+summary(lmfit)
+```
+
+## Tidy the output 
+
+Instead, you can use the `tidy` function, from the broom package, on the fit:
+
+```{r}
+library(broom)
+tidy(lmfit)
+```
+
+## Tidy the output 
+
+This gives you a data.frame representation. Note that the row names have been moved into a column called `term`, and the column names are simple and consistent (and can be accessed using `$`).
+
+## Augment the output 
+
+Instead of viewing the coefficients, you might be interested in the fitted values and residuals for each of the original points in the regression. For this, use `augment`, which augments the original data with information from the model:
+
+```{r}
+augment(lmfit)
+```
+
+Note that each of the new columns begins with a `.` (to avoid overwriting any of the original columns).
+
+## Glance at the output 
+
+
+Finally, several summary statistics are computed for the entire regression, such as R^2 and the F-statistic. These can be accessed with the `glance` function:
+
+```{r}
+glance(lmfit)
+```
+
+
+
+## Generalized linear and non-linear models
+
+These functions apply equally well to the output from `glm`:
+
+```{r glmfit}
+glmfit <- glm(am ~ wt, mtcars, family="binomial")
+tidy(glmfit)
+augment(glmfit)
+glance(glmfit)
+```
+
+## Generalized linear and non-linear models
+
+
+These functions also work on other fits, such as nonlinear models (`nls`):
+
+```{r}
+nlsfit <- nls(mpg ~ k / wt + b, mtcars, start=list(k=1, b=0))
+tidy(nlsfit)
+augment(nlsfit, mtcars)
+glance(nlsfit)
+```
+
+## Hypothesis testing
+
+The `tidy` function can also be applied to `htest` objects, such as those output by popular built-in functions like `t.test`, `cor.test`, and `wilcox.test`.
+
+```{r ttest}
+tt <- t.test(wt ~ am, mtcars)
+tidy(tt)
+```
+
+## Hypothesis testing
+
+Some cases might have fewer columns (for example, no confidence interval):
+
+```{r}
+wt <- wilcox.test(wt ~ am, mtcars)
+tidy(wt)
+```
+
+## Hypothesis testing
+
+Since the `tidy` output is already only one row, `glance` returns the same output:
+
+```{r}
+glance(tt)
+glance(wt)
+```
+
+
+## Tidy bootstrapping with `broom`
 
 
 ## Example: weight and mileage in `mtcars`
