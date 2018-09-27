@@ -23,7 +23,12 @@ library(knitr)
 
 ## Tidying up the analysis stage
 
-See these slides and the Rmd on github:
+See these slides online:
+
+http://cskovron.github.io/tidy-analysis
+
+View the Rmd document:
+
 http://github.com/cskovron/tidy-analysis
 
 
